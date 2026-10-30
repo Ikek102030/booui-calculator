@@ -9,6 +9,7 @@ FILTER·UNIQUE·LET 같은 최신 함수는 옛 엑셀에서 깨지므로 쓰지
 import sys
 
 from openpyxl import Workbook
+from openpyxl.comments import Comment
 from openpyxl.formatting.rule import FormulaRule
 from functools import partial
 
@@ -91,6 +92,10 @@ def guide(wb):
         ("④ 화환·근조기·바구니는 '근조 화환' 탭, 장례 비용은 '지출' 탭에 적으세요.", None),
         ("    부의금과 따로 모은 공금이 있으면 지출 탭 오른쪽 '공금 시작'에 금액을 넣고, 낸 사람을 '공금'으로 고르세요.", MUTED),
         ("⑤ '요약' 탭에서 가족별 합계·지출 분담·남는 몫을, '가족별' 탭에서 노란 칸의 이름을 골라 그분 명단을 봅니다.", None),
+        ("    지출 분담 = 내가 받은 부의금 × (지출 총액 ÷ 부의금 총액). 많이 받은 가족이 그만큼 더 냅니다. 다르게 나누셨다면 '실제 지급' 칸에 적으세요.", MUTED),
+        ("", None),
+        ("일차는 자동으로 매겨집니다. '1일차 소계' 줄 위는 1일차, 그 아래부터 다음 소계 줄까지는 2일차입니다.", None),
+        ("    어떤 줄만 다른 날로 바꾸려면 그 줄의 '일차' 칸에 숫자(예: 2)를 직접 적으세요. 그 줄만 바뀝니다.", MUTED),
         ("", None),
         ("노란색 줄은 확인이 필요한 줄입니다. (금액이 글자로 적힘, 이름이나 받은 가족이 빔, 같은 줄이 두 번 적힘 등)", None),
         ("같은 분이 근조기와 화환을 함께 보내신 건 중복으로 보지 않습니다.", MUTED),
@@ -122,7 +127,11 @@ def families(wb):
 def money(wb):
     ws = wb.create_sheet("부의금 입력")
     head(ws, 1, 1, ["받은 가족", "이름", "금액", "소속·관계", "메모"])
-    head(ws, 1, 6, ["확인 필요", "일차", "가족별 순번", "소계 번호", "확인 표시"], BLUE)
+    head(ws, 1, 6, ["확인 필요", "일차 (자동)", "가족별 순번", "소계 번호", "확인 표시"], BLUE)
+    ws["G1"].comment = Comment(
+        "일차는 자동으로 매겨집니다.\n"
+        "하루가 끝나면 이름 칸에 '1일차 소계'처럼 적은 줄을 넣으세요. 그 줄 아래부터 다음 날입니다.\n"
+        "어떤 줄만 다른 날로 바꾸려면 이 열의 그 칸에 숫자(예: 2)를 직접 적으면 됩니다.", "양식", width=320, height=110)
     for r in range(2, M + 1):
         for c in range(1, 6):
             ws.cell(r, c).fill = INPUT
@@ -143,7 +152,7 @@ def money(wb):
     list_validation(ws, f"A2:A{M}", f"={FAMS}")
     ws.conditional_formatting.add(f"A2:G{M}", FormulaRule(formula=[is_sep("$B2")], fill=BLUE, font=BOLD, stopIfTrue=True))
     ws.conditional_formatting.add(f"A2:G{M}", FormulaRule(formula=['$F2<>""'], fill=YELLOW))
-    widths(ws, {"A": 13, "B": 16, "C": 13, "D": 20, "E": 18, "F": 22, "G": 8})
+    widths(ws, {"A": 13, "B": 16, "C": 13, "D": 20, "E": 18, "F": 22, "G": 11})
     ws.column_dimensions["H"].hidden = True
     ws.column_dimensions["I"].hidden = True
     ws.column_dimensions["J"].hidden = True
@@ -251,9 +260,16 @@ def summary(wb):
     value(ws, "H1", f'=IF(COUNTIF({MONEY}!$B$2:$B${M},"*총합계*")=0,"",SUMIF({MONEY}!$B$2:$B${M},"*총합계*",{MONEY}!$C$2:$C${M}))')
     label(ws, "G2", "장부와 차이")
     value(ws, "H2", '=IF(H1="","",B1-H1)')
+    label(ws, "G3", "지출 비율")
+    value(ws, "H3", '=IF(B1=0,"",지출!H4/B1)', "0.0%")
+    ws["I3"] = "(지출 총액 ÷ 부의금 총액)"  # "=" 로 시작하면 엑셀이 수식으로 읽는다
+    ws["I3"].font = Font(italic=True, color="999999")
 
     head(ws, 5, 1, ["받은 가족", "건수", "합계", "비중", "조화·물품"])
     head(ws, 5, 7, ["지출 분담", "남는 몫", "실제 지급"])
+    ws["G5"].comment = Comment("내가 받은 부의금 × 지출 비율(H3).\n받은 부의금 비율대로 지출을 나눈 금액입니다.", "양식", width=260, height=70)
+    ws["H5"].comment = Comment("내가 받은 부의금 − 지출 분담.", "양식", width=220, height=50)
+    ws["I5"].comment = Comment("실제로 나눠 드린 금액을 적는 칸입니다.\n만 원 단위로 맞추거나, 똑같이 나누는 등 다르게 정하셨다면 여기에 적으세요.", "양식", width=300, height=80)
     first, last = 6, 5 + N_FAM
     for k in range(N_FAM):
         r = first + k
@@ -280,7 +296,16 @@ def summary(wb):
     ws.cell(t + 1, 3).value = f"=B1-C{t}"
     ws.cell(t + 1, 3).number_format = WON
     ws.cell(t + 1, 3).font = Font(italic=True, color="993333")
-    ws.cell(t + 2, 7, "지출 분담 = 받은 부의금 비율대로 지출을 나눈 금액. 다르게 나누셨다면 '실제 지급'에 적으세요.").font = MUTED
+    note = [
+        ("지출 분담은 이렇게 계산합니다", Font(bold=True, size=11)),
+        ("· 지출 비율 = 지출 총액 ÷ 부의금 총액   (위쪽 '지출 비율' 칸)", None),
+        ("· 지출 분담 = 내가 받은 부의금 × 지출 비율   → 부의금을 많이 받은 가족이 그만큼 더 냅니다", None),
+        ("· 남는 몫 = 내가 받은 부의금 − 지출 분담", None),
+        ("· 예) 지출 비율이 80%이고 내가 받은 부의금이 100만 원이면 → 지출 분담 80만 원, 남는 몫 20만 원", MUTED),
+        ("· 똑같이 나누기 등 다른 방식으로 정하셨다면, 이 계산은 참고만 하시고 '실제 지급' 칸에 정한 금액을 적으세요.", MUTED),
+    ]
+    for i, (txt, f) in enumerate(note):
+        ws.cell(t + 3 + i, 1, txt).font = f or Font(color="444444")
 
     label(ws, "K4", "일차별 소계")
     ws["K4"].font = Font(bold=True, size=12)
