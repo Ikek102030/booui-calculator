@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+# 실제 장부·결과물은 올리지 않는다
+*.xlsx
+*.pdf
+*.json
+!.claude-plugin/*.json
+.DS_Store
