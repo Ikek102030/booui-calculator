@@ -28,7 +28,7 @@
 
 AI 를 쓰지 않으셔도 됩니다. **양식 파일 하나만 내려받아** 적으시면 엑셀이 알아서 계산합니다.
 
-👉 **[부의금 정산 양식 내려받기 (엑셀)](https://github.com/Ikek102030/booui/raw/main/templates/%EB%B6%80%EC%9D%98%EA%B8%88_%EC%A0%95%EC%82%B0_%EC%96%91%EC%8B%9D.xlsx)**
+👉 **[부의금 정산 양식 내려받기 (엑셀)](https://github.com/Ikek102030/booui-calculator/raw/main/templates/%EB%B6%80%EC%9D%98%EA%B8%88_%EC%A0%95%EC%82%B0_%EC%96%91%EC%8B%9D.xlsx)**
 
 - 엑셀 2010 이후, 구글 시트(파일 → 가져오기), 한셀에서 모두 열립니다.
 - '가족 목록'에 가족 이름을 적고, '부의금 입력'·'근조 화환'·'지출'에 적기만 하면 됩니다.
@@ -68,7 +68,7 @@ AI(Claude)를 쓰시면 여기에 더해, 양식이 제각각인 장부를 알�
 Claude Code 에서:
 
 ```
-/plugin marketplace add Ikek102030/booui
+/plugin marketplace add Ikek102030/booui-calculator
 /plugin install booui@booui
 ```
 
