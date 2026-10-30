@@ -23,6 +23,7 @@ from openpyxl import load_workbook
 from openpyxl.worksheet.formula import ArrayFormula
 
 INPUT, ITEMS, SUMMARY, PICKER = "부의금 입력", "근조 화환", "요약", "가족별"
+DROP = [PICKER, "확인 필요"]  # 받는 분 파일에서 빼는 탭(드롭다운 화면, 점검용)
 CHROME_PATHS = [
     os.environ.get("CHROME", ""),
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -161,7 +162,7 @@ def report_html(fam, p, s):
 def person_workbook(export, person, people, out):
     wb = load_workbook(export)
     vals = load_workbook(export, data_only=True)
-    for name in [PICKER] + [p for p in people if p != person]:
+    for name in DROP + [p for p in people if p != person]:
         if name in wb.sheetnames:
             del wb[name]
     for ws in wb.worksheets:
@@ -203,8 +204,9 @@ def main():
         # 검산: 그분 탭 명단 합계 = 그분 탭 D1 = 요약 합계 = PDF 합계, 수식 0개
         chk = load_workbook(xlsx)
         ws = chk[person]
-        listed = sum(ws.cell(r, 3).value or 0 for r in range(4, ws.max_row + 1)
-                     if ws.cell(r, 2).value and isinstance(ws.cell(r, 3).value, (int, float)))
+        # 번호(A열)가 있는 줄은 이름이 비어도 센다
+        listed = sum(ws.cell(r, 3).value for r in range(4, ws.max_row + 1)
+                     if isinstance(ws.cell(r, 1).value, (int, float)) and isinstance(ws.cell(r, 3).value, (int, float)))
         assert listed == (ws["D1"].value or 0), (person, listed, ws["D1"].value)
         assert not any(is_formula(c.value) for s in chk.worksheets for r in s.iter_rows() for c in r), person
         s = settle.get(person)
