@@ -92,7 +92,7 @@ def guide(wb):
         ("④ 화환·근조기·바구니는 '근조 화환' 탭, 장례 비용은 '지출' 탭에 적으세요.", None),
         ("    부의금과 따로 모은 공금이 있으면 지출 탭 오른쪽 '공금 시작'에 금액을 넣고, 낸 사람을 '공금'으로 고르세요.", MUTED),
         ("⑤ '요약' 탭에서 가족별 합계·지출 분담·남는 몫을, '가족별' 탭에서 노란 칸의 이름을 골라 그분 명단을 봅니다.", None),
-        ("    지출 분담 = 내가 받은 부의금 × (지출 총액 ÷ 부의금 총액). 많이 받은 가족이 그만큼 더 냅니다. 다르게 나누셨다면 '실제 지급' 칸에 적으세요.", MUTED),
+        ("    지출 분담 = 받은 부의금 × 지출 비율(지출 총액 ÷ 부의금 총액). 다르게 나눴다면 '실제 지급' 칸에 적으세요.", MUTED),
         ("", None),
         ("일차는 자동으로 매겨집니다. '1일차 소계' 줄 위는 1일차, 그 아래부터 다음 소계 줄까지는 2일차입니다.", None),
         ("    어떤 줄만 다른 날로 바꾸려면 그 줄의 '일차' 칸에 숫자(예: 2)를 직접 적으세요. 그 줄만 바뀝니다.", MUTED),
@@ -105,10 +105,11 @@ def guide(wb):
     ]
     for i, (t, f) in enumerate(lines, 1):
         ws.cell(i, 2, t)
+        ws.cell(i, 2).alignment = Alignment(wrap_text=True, vertical="top")  # 화면 밖으로 말이 넘어가지 않게
         if f:
             ws.cell(i, 2).font = f
     ws.column_dimensions["A"].width = 3
-    ws.column_dimensions["B"].width = 110
+    ws.column_dimensions["B"].width = 100
     ws.sheet_view.showGridLines = False
 
 
@@ -152,7 +153,7 @@ def money(wb):
     list_validation(ws, f"A2:A{M}", f"={FAMS}")
     ws.conditional_formatting.add(f"A2:G{M}", FormulaRule(formula=[is_sep("$B2")], fill=BLUE, font=BOLD, stopIfTrue=True))
     ws.conditional_formatting.add(f"A2:G{M}", FormulaRule(formula=['$F2<>""'], fill=YELLOW))
-    widths(ws, {"A": 13, "B": 16, "C": 13, "D": 20, "E": 18, "F": 22, "G": 11})
+    widths(ws, {"A": 13, "B": 16, "C": 13, "D": 20, "E": 18, "F": 22, "G": 13})
     ws.column_dimensions["H"].hidden = True
     ws.column_dimensions["I"].hidden = True
     ws.column_dimensions["J"].hidden = True
@@ -235,7 +236,7 @@ def spend(wb):
             ws.cell(rr, c).border = BOX
     list_validation(ws, f"D2:D{S}", f"=$G$12:$G${last}")
     ws.conditional_formatting.add(f"A2:E{S}", FormulaRule(formula=['$E2<>""'], fill=YELLOW))
-    widths(ws, {"A": 22, "B": 13, "C": 18, "D": 12, "E": 18, "F": 3, "G": 16, "H": 15, "I": 7})
+    widths(ws, {"A": 22, "B": 13, "C": 18, "D": 12, "E": 18, "F": 3, "G": 19, "H": 15, "I": 7})
     ws.column_dimensions["Y"].hidden = True
     ws.freeze_panes = "A2"
     ws.sheet_properties.tabColor = ORANGE
@@ -261,9 +262,8 @@ def summary(wb):
     label(ws, "G2", "장부와 차이")
     value(ws, "H2", '=IF(H1="","",B1-H1)')
     label(ws, "G3", "지출 비율")
-    value(ws, "H3", '=IF(B1=0,"",지출!H4/B1)', "0.0%")
-    ws["I3"] = "(지출 총액 ÷ 부의금 총액)"  # "=" 로 시작하면 엑셀이 수식으로 읽는다
-    ws["I3"].font = Font(italic=True, color="999999")
+    value(ws, "H3", '=IF(B1=0,"-",지출!H4/B1)', "0.0%")
+    ws["H3"].alignment = Alignment(horizontal="right")
 
     head(ws, 5, 1, ["받은 가족", "건수", "합계", "비중", "조화·물품"])
     head(ws, 5, 7, ["지출 분담", "남는 몫", "실제 지급"])
@@ -297,18 +297,19 @@ def summary(wb):
     ws.cell(t + 1, 3).number_format = WON
     ws.cell(t + 1, 3).font = Font(italic=True, color="993333")
     note = [
-        ("지출 분담은 이렇게 계산합니다", Font(bold=True, size=11)),
-        ("· 지출 비율 = 지출 총액 ÷ 부의금 총액   (위쪽 '지출 비율' 칸)", None),
-        ("· 지출 분담 = 내가 받은 부의금 × 지출 비율   → 부의금을 많이 받은 가족이 그만큼 더 냅니다", None),
-        ("· 남는 몫 = 내가 받은 부의금 − 지출 분담", None),
-        ("· 예) 지출 비율이 80%이고 내가 받은 부의금이 100만 원이면 → 지출 분담 80만 원, 남는 몫 20만 원", MUTED),
-        ("· 똑같이 나누기 등 다른 방식으로 정하셨다면, 이 계산은 참고만 하시고 '실제 지급' 칸에 정한 금액을 적으세요.", MUTED),
+        ("지출 분담 계산 방식", Font(bold=True, size=11)),
+        ("· 지출 비율 = 지출 총액 ÷ 부의금 총액", None),
+        ("· 지출 분담 = 받은 부의금 × 지출 비율", None),
+        ("· 남는 몫 = 받은 부의금 − 지출 분담", None),
+        ("· 예) 비율 80%, 받은 부의금 100만 원 → 분담 80만 원, 남는 몫 20만 원", MUTED),
+        ("· 다르게 나눴다면 '실제 지급' 칸에 적으세요.", MUTED),
     ]
     for i, (txt, f) in enumerate(note):
         ws.cell(t + 3 + i, 1, txt).font = f or Font(color="444444")
 
     label(ws, "K4", "일차별 소계")
     ws["K4"].font = Font(bold=True, size=12)
+    ws.merge_cells("K4:O4")  # 좁은 일차 열에서 제목이 잘리지 않게
     head(ws, 5, 11, ["일차", "건수", "합계", "장부에 적은 소계", "차이"])
     for d in range(1, N_DAY + 1):
         r = 5 + d
@@ -322,7 +323,7 @@ def summary(wb):
             ws.cell(r, c).number_format = f
             ws.cell(r, c).border = BOX
     widths(ws, {"A": 16, "B": 14, "C": 15, "D": 11, "E": 14, "F": 3, "G": 16, "H": 15, "I": 14, "J": 3,
-                "K": 8, "L": 8, "M": 14, "N": 16, "O": 12})
+                "K": 8, "L": 8, "M": 14, "N": 18, "O": 12})
     ws.sheet_view.showGridLines = False
     ws.sheet_properties.tabColor = SKY
 
@@ -357,7 +358,7 @@ def by_family(wb):
         mi = f"MATCH({k},{ITEM}!$G$2:$G${I},0)"
         for c, col in ((8, "B"), (9, "C"), (10, "D"), (11, "E")):
             ws.cell(r, c).value = f'=IF({k}>$I$1,"",INDEX({ITEM}!${col}$2:${col}${I},{mi})&"")'
-    widths(ws, {"A": 7, "B": 16, "C": 13, "D": 20, "E": 16, "F": 6, "G": 3, "H": 38, "I": 12, "J": 16, "K": 14})
+    widths(ws, {"A": 12, "B": 16, "C": 13, "D": 20, "E": 16, "F": 6, "G": 3, "H": 38, "I": 12, "J": 16, "K": 14})
     ws.freeze_panes = "A4"
     ws.sheet_view.showGridLines = False
     ws.page_setup.orientation = "landscape"

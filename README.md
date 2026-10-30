@@ -1,4 +1,6 @@
-# 부의금 정산 스킬
+# Booui — Funeral Condolence Helper
+
+부의금 정산을 도와주는 Claude 스킬과 엑셀 양식입니다.
 
 > **삼가 고인의 명복을 빕니다.**
 >
@@ -25,7 +27,7 @@
 
 AI 를 쓰지 않으셔도 됩니다. **양식 파일 하나만 내려받아** 적으시면 엑셀이 알아서 계산합니다.
 
-👉 **[부의금 정산 양식 내려받기 (엑셀)](https://github.com/Ikek102030/bugeum-settlement-skill/raw/main/templates/%EB%B6%80%EC%9D%98%EA%B8%88_%EC%A0%95%EC%82%B0_%EC%96%91%EC%8B%9D.xlsx)**
+👉 **[부의금 정산 양식 내려받기 (엑셀)](https://github.com/Ikek102030/booui/raw/main/templates/%EB%B6%80%EC%9D%98%EA%B8%88_%EC%A0%95%EC%82%B0_%EC%96%91%EC%8B%9D.xlsx)**
 
 - 엑셀 2010 이후, 구글 시트(파일 → 가져오기), 한셀에서 모두 열립니다.
 - '가족 목록'에 가족 이름을 적고, '부의금 입력'·'근조 화환'·'지출'에 적기만 하면 됩니다.
@@ -65,11 +67,11 @@ AI(Claude)를 쓰시면 여기에 더해, 양식이 제각각인 장부를 알�
 Claude Code 에서:
 
 ```
-/plugin marketplace add Ikek102030/bugeum-settlement-skill
-/plugin install bugeum-settlement@bugeum-settlement
+/plugin marketplace add Ikek102030/booui
+/plugin install booui@booui
 ```
 
-또는 `skills/bugeum-settlement` 폴더를 `~/.claude/skills/` 에 복사하셔도 됩니다.
+또는 `skills/booui` 폴더를 `~/.claude/skills/` 에 복사하셔도 됩니다.
 
 ## 필요한 것
 
@@ -96,7 +98,7 @@ Claude Code 에서:
 
 ```
 templates/부의금_정산_양식.xlsx  AI 없이 쓰는 빈 양식
-skills/bugeum-settlement/
+skills/booui/
   SKILL.md                     작업 순서와 규칙
   references/sheet-formulas.md 구글 시트 탭별 수식(실제로 쓰며 검증한 것)
   scripts/build_excel.py       엑셀 방식: 양식이 제각각인 장부 → 정산 엑셀

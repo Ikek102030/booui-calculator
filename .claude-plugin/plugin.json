@@ -1,7 +1,19 @@
 {
-  "name": "bugeum-settlement",
-  "description": "장례 부의금·조화·지출을 구글 시트나 엑셀로 정리하고, 가족별로 정산해 한 분당 엑셀+PDF 리포트로 나눠 주는 스킬",
+  "name": "booui",
+  "description": "Booui — Funeral Condolence Helper. 장례 부의금·조화·지출을 구글 시트나 엑셀로 정리하고, 가족별로 정산해 한 분당 엑셀+PDF 리포트로 나눠 주는 스킬",
   "version": "1.0.0",
-  "author": { "name": "Ikek102030" },
-  "keywords": ["부의금", "조의금", "장례", "정산", "google-sheets"]
+  "author": {
+    "name": "Ikek102030"
+  },
+  "keywords": [
+    "booui",
+    "funeral",
+    "condolence",
+    "부의금",
+    "조의금",
+    "장례",
+    "정산",
+    "google-sheets",
+    "excel"
+  ]
 }
