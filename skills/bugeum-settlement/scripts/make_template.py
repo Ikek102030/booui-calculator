@@ -28,7 +28,7 @@ GREY = PatternFill("solid", fgColor="EDEDED")
 INPUT = PatternFill("solid", fgColor="FFF8E1")
 YELLOW = PatternFill("solid", fgColor="FFF2CC")
 BLUE = PatternFill("solid", fgColor="DCE6F7")
-LINE = Side(style="thin", color="D9D9D9")
+LINE = Side(style="thin", color="C8C8C8")  # 배경색을 칠하면 엑셀 눈금선이 가려지므로 칸마다 테두리를 그린다
 BOX = Border(top=LINE, bottom=LINE, left=LINE, right=LINE)
 BOLD = Font(bold=True)
 MUTED = Font(color="777777")
@@ -126,6 +126,8 @@ def money(wb):
     for r in range(2, M + 1):
         for c in range(1, 6):
             ws.cell(r, c).fill = INPUT
+        for c in range(1, 8):
+            ws.cell(r, c).border = BOX
         ws.cell(r, 3).number_format = WON
         ws.cell(r, 6).value = (
             f'=IF(COUNTA(A{r}:E{r})=0,"",IF({is_sep(f"B{r}")},"",TRIM('
@@ -156,6 +158,8 @@ def items(wb):
     for r in range(2, I + 1):
         for c in range(1, 6):
             ws.cell(r, c).fill = INPUT
+        for c in range(1, 7):
+            ws.cell(r, c).border = BOX
         # 같은 분이 종류를 달리해 보내는 건 정상 — 보낸 분과 종류가 둘 다 같을 때만 의심
         ws.cell(r, 6).value = (
             f'=IF(COUNTA(A{r}:E{r})=0,"",TRIM(IF(A{r}="","받은 가족 없음 ","")&IF(B{r}="","보낸 분 없음 ","")'
@@ -180,6 +184,8 @@ def spend(wb):
     for r in range(2, S + 1):
         for c in range(1, 5):
             ws.cell(r, c).fill = INPUT
+        for c in range(1, 6):
+            ws.cell(r, c).border = BOX
         ws.cell(r, 2).number_format = WON
         ws.cell(r, 5).value = (
             f'=IF(COUNTA(A{r}:D{r})=0,"",IF({is_sep(f"A{r}")},"",TRIM(IF(A{r}="","항목 없음 ","")'
@@ -321,6 +327,8 @@ def by_family(wb):
         ws.cell(r, 4).value = f'=IF($A{r}="","",INDEX({MONEY}!$D$2:$D${M},{m})&"")'
         ws.cell(r, 5).value = f'=IF($A{r}="","",INDEX({MONEY}!$E$2:$E${M},{m})&"")'
         ws.cell(r, 3).number_format = WON
+        for c in (1, 2, 3, 4, 5, 8, 9, 10, 11):
+            ws.cell(r, c).border = BOX
         mi = f"MATCH({k},{ITEM}!$G$2:$G${I},0)"
         for c, col in ((8, "B"), (9, "C"), (10, "D"), (11, "E")):
             ws.cell(r, c).value = f'=IF({k}>$I$1,"",INDEX({ITEM}!${col}$2:${col}${I},{mi})&"")'
