@@ -23,6 +23,7 @@ N_MONEY, N_ITEM, N_SPEND, N_FAM, N_DAY, N_VIEW = 1000, 500, 300, 20, 10, 400
 M, I, S = N_MONEY + 1, N_ITEM + 1, N_SPEND + 1  # 마지막 행 번호
 F_LAST = N_FAM + 1
 KINDS = ["근조화환", "근조 바구니", "근조기", "쌀화환", "기타"]
+DONATE_URL = "https://qr.kakaopay.com/FXtiOuwYv"
 
 WON = '#,##0"원"'
 GREY = PatternFill("solid", fgColor="EDEDED")
@@ -103,6 +104,8 @@ def guide(wb):
         ("", None),
         (f"부의금 {N_MONEY}줄, 화환 {N_ITEM}줄, 지출 {N_SPEND}줄까지 적을 수 있습니다. 구글 시트에 올려 써도 됩니다.", MUTED),
         ("", None),
+        ("이 양식이 도움이 되셨다면 후원해 주셔도 좋습니다(필요 없으시면 지나치세요): " + DONATE_URL, Font(size=9, color="777777")),
+        ("", None),
         ("면책 조항", Font(bold=True, size=10, color="777777")),
         ("이 양식은 계산을 편하게 하도록 돕는 도구일 뿐이며, 결과가 정확하다고 보장하지 않습니다. 중요한 금액은 반드시 직접 확인하세요. "
          "이 양식을 쓰거나 그 결과를 근거로 해서 생긴 계산 오류, 금전 정산, 가족·지인 간 분쟁, 그 밖의 어떤 손해에 대해서도 만든 사람은 책임을 지지 않습니다. "
@@ -113,6 +116,8 @@ def guide(wb):
         ws.cell(i, 2).alignment = Alignment(wrap_text=True, vertical="top")  # 화면 밖으로 말이 넘어가지 않게
         if f:
             ws.cell(i, 2).font = f
+        if DONATE_URL in (t or ""):
+            ws.cell(i, 2).hyperlink = DONATE_URL
     ws.column_dimensions["A"].width = 3
     ws.column_dimensions["B"].width = 100
     ws.sheet_view.showGridLines = False
