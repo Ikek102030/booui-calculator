@@ -108,6 +108,23 @@ skills/booui/
 
 이 저장소에는 실제 장부 데이터(이름·금액)가 들어 있지 않습니다.
 
+## 면책 조항
+
+- 이 스킬과 양식은 부의금·조화·지출 **계산을 편하게 하도록 돕는 도구**일 뿐입니다.
+- 계산 결과가 정확하다고 보장하지 않습니다. 입력 실수, 수식·프로그램 오류, AI 의 잘못된 처리로 결과가 틀릴 수 있습니다. **중요한 금액은 반드시 직접 확인하세요.**
+- 이 도구를 쓰거나 그 결과를 근거로 해서 생긴 계산 오류, 금전 정산, 가족·지인 간 분쟁, 그 밖의 어떤 손해에 대해서도 **만든 사람은 책임을 지지 않습니다.**
+- 이 도구는 법률·세무 자문이 아닙니다.
+- 입력한 이름·금액 같은 정보는 사용하시는 분이 직접 관리합니다. AI 나 구글 시트를 쓰시면 해당 서비스(Claude, Google 등)의 개인정보 정책이 적용됩니다.
+
+<details>
+<summary>Disclaimer (English)</summary>
+
+This skill and template are provided only as a convenience for calculating funeral condolence money, gifts, and expenses.
+They are provided "as is", without warranty of any kind, and the results may contain errors caused by input mistakes, formula or software bugs, or AI misprocessing.
+Always verify important amounts yourself. The author is not liable for any calculation errors, financial settlements, disputes among family members or others, or any other loss or damage arising from the use of this tool or its results.
+This is not legal or tax advice. See also the MIT [LICENSE](LICENSE).
+</details>
+
 ---
 
 떠나보내신 분을 잘 모시는 일에 마음을 다하실 수 있도록, 셈은 이 스킬이 조금 덜어 드리기를 바랍니다.
