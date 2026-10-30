@@ -1,6 +1,7 @@
-# Booui — Funeral Condolence Helper
+# 부의금 계산 · 장례 정산
 
-부의금 정산을 도와주는 Claude 스킬과 엑셀 양식입니다.
+**Booui — Funeral Condolence Helper**
+부의금·조화·장례 지출을 정리하고 가족별로 정산하는 엑셀 양식과 Claude 스킬입니다.
 
 > **삼가 고인의 명복을 빕니다.**
 >
