@@ -115,6 +115,10 @@ skills/booui/
 
 ☕ **[카카오페이로 후원하기](https://qr.kakaopay.com/FXtiOuwYv)** (휴대폰에서 열면 카카오페이 송금 화면이 열립니다)
 
+<img src=".github/assets/donate-kakaopay-qr.png" width="140" alt="카카오페이 후원 QR">
+
+컴퓨터로 보고 계시면 휴대폰 카메라로 QR 을 찍으셔도 됩니다.
+
 ## 면책 조항
 
 - 이 스킬과 양식은 부의금·조화·지출 **계산을 편하게 하도록 돕는 도구**일 뿐입니다.
