@@ -88,7 +88,7 @@ def match(row, keys):
 
 
 def classify(rows):
-    """(종류, 제목 줄 번호, 열) — 지출 → 조화·물품 → 부의금 순으로 본다."""
+    """(종류, 제목 줄 번호, 열) - 지출 → 조화·물품 → 부의금 순으로 본다."""
     for i, row in enumerate(rows[:10]):
         c = match(row, SPEND_KEYS)
         if {"item", "amount"} <= c.keys() and "giver" not in match(row, MONEY_KEYS):
@@ -163,7 +163,7 @@ def checks(money, items, spend):
         if r["giver"] and r["amount"] and dup[key(r)] > 1:
             why.append("중복 의심")
         r["check"] = ", ".join(why)
-    # 같은 분이 종류를 달리해 여러 개 보내는 건 정상 — 보낸 분과 종류가 둘 다 같을 때만 의심
+    # 같은 분이 종류를 달리해 여러 개 보내는 건 정상 - 보낸 분과 종류가 둘 다 같을 때만 의심
     idup = Counter((norm(r["giver"]), norm(r["kind"])) for r in items if r["giver"])
     for r in items:
         why = []
@@ -284,7 +284,7 @@ def write(money, items, spend, ledger, out):
     widths(ws, {"A": 22, "B": 13, "C": 18, "D": 12, "E": 18, "F": 3, "G": 14, "H": 14, "I": 7, "M": 16, "N": 14})
     ws.freeze_panes = "A2"
 
-    # 요약 — 구글 시트 방식과 같은 자리(5행 머리글 '받은 가족', 6행부터 가족)
+    # 요약 - 구글 시트 방식과 같은 자리(5행 머리글 '받은 가족', 6행부터 가족)
     s = summary
     kpi(s, 1, 1, "총 합계", total, WON)
     kpi(s, 2, 1, "총 건수", len(money), '0"건"')
@@ -352,7 +352,7 @@ def write(money, items, spend, ledger, out):
         ws.cell(2, 1, "확인할 줄이 없습니다.")
     widths(ws, {"A": 10, "B": 12, "C": 18, "D": 14, "E": 26, "F": 34})
 
-    # 사람별 탭 — A1 '받은 가족', B1 이름 (deliver.py 가 이걸로 찾는다)
+    # 사람별 탭 - A1 '받은 가족', B1 이름 (deliver.py 가 이걸로 찾는다)
     used = set(wb.sheetnames)
     for fam in order:
         if fam == "(미지정)":

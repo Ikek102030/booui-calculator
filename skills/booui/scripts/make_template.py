@@ -180,7 +180,7 @@ def items(wb):
             ws.cell(r, c).fill = INPUT
         for c in range(1, 7):
             ws.cell(r, c).border = BOX
-        # 같은 분이 종류를 달리해 보내는 건 정상 — 보낸 분과 종류가 둘 다 같을 때만 의심
+        # 같은 분이 종류를 달리해 보내는 건 정상 - 보낸 분과 종류가 둘 다 같을 때만 의심
         ws.cell(r, 6).value = (
             f'=IF(COUNTA(A{r}:E{r})=0,"",TRIM(IF(A{r}="","받은 가족 없음 ","")&IF(B{r}="","보낸 분 없음 ","")'
             f'&IF(AND(B{r}<>"",COUNTIFS($B$2:$B${I},B{r},$C$2:$C${I},C{r})>1),"중복 의심","")))')
