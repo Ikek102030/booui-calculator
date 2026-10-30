@@ -6,3 +6,6 @@ __pycache__/
 *.json
 !.claude-plugin/*.json
 .DS_Store
+
+# 배포용 빈 양식은 올린다
+!templates/*.xlsx
