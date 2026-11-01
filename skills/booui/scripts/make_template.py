@@ -24,6 +24,8 @@ M, I, S = N_MONEY + 1, N_ITEM + 1, N_SPEND + 1  # 마지막 행 번호
 F_LAST = N_FAM + 1
 KINDS = ["근조화환", "근조 바구니", "근조기", "쌀화환", "기타"]
 DONATE_URL = "https://qr.kakaopay.com/FXtiOuwYv"
+METHODS = ["1. 똑같이 나누기", "2. 받은 부의금 비율", "3. 손님 수 비율"]
+PICK = "▼ 정산 방법을 골라 주세요"
 
 WON = '#,##0"원"'
 GREY = PatternFill("solid", fgColor="EDEDED")
@@ -92,8 +94,9 @@ def guide(wb):
         ("    마지막에 '총합계' 줄을 적어도 됩니다. '소계'·'합계' 줄은 합계에 두 번 들어가지 않습니다.", MUTED),
         ("④ 화환·근조기·바구니는 '근조 화환' 탭, 장례 비용은 '지출' 탭에 적으세요.", None),
         ("    부의금과 따로 모은 공금이 있으면 지출 탭 오른쪽 '공금 시작'에 금액을 넣고, 낸 사람을 '공금'으로 고르세요.", MUTED),
-        ("⑤ '요약' 탭에서 가족별 합계·지출 분담·남는 몫을, '가족별' 탭에서 노란 칸의 이름을 골라 그분 명단을 봅니다.", None),
-        ("    지출 분담 = 받은 부의금 × 지출 비율(지출 총액 ÷ 부의금 총액). 다르게 나눴다면 '실제 지급' 칸에 적으세요.", MUTED),
+        ("⑤ '요약' 탭 정산 표 위 노란 칸에서 정산 방법을 고르세요: 똑같이 나누기 / 받은 부의금 비율 / 손님 수 비율.", None),
+        ("    방법별 장단점은 요약 표 아래에 있습니다. 비용을 나눠 내지 않을 가족은 '가족 목록'의 '정산 참여'에 X.", MUTED),
+        ("⑥ '가족별' 탭에서 노란 칸의 이름을 고르면 그분 명단이 나옵니다.", None),
         ("", None),
         ("일차는 자동으로 매겨집니다. '1일차 소계' 줄 위는 1일차, 그 아래부터 다음 소계 줄까지는 2일차입니다.", None),
         ("    어떤 줄만 다른 날로 바꾸려면 그 줄의 '일차' 칸에 숫자(예: 2)를 직접 적으세요. 그 줄만 바뀝니다.", MUTED),
@@ -125,13 +128,18 @@ def guide(wb):
 
 def families(wb):
     ws = wb.create_sheet("가족 목록")
-    head(ws, 1, 1, ["받은 가족"])
+    head(ws, 1, 1, ["받은 가족", "정산 참여"])
     for r in range(2, F_LAST + 1):
-        ws.cell(r, 1).fill = INPUT
-        ws.cell(r, 1).border = BOX
-    ws["C1"] = "부의금·화환을 받는 가족 이름을 적으세요. 여기 적은 이름이 드롭다운과 요약에 나옵니다."
-    ws["C1"].font = MUTED
-    widths(ws, {"A": 18, "C": 80})
+        for c in (1, 2):
+            ws.cell(r, c).fill = INPUT
+            ws.cell(r, c).border = BOX
+        ws.cell(r, 2).alignment = Alignment(horizontal="center")
+    list_validation(ws, f"B2:B{F_LAST}", '"O,X"')
+    ws["D1"] = "부의금·화환을 받는 가족 이름을 적으세요. 여기 적은 이름이 드롭다운과 요약에 나옵니다."
+    ws["D1"].font = MUTED
+    ws["D2"] = "정산 참여: 장례 비용을 나눠 낼 가족은 비워 두거나 O, 빠질 가족(예: 손주)은 X."
+    ws["D2"].font = MUTED
+    widths(ws, {"A": 18, "B": 11, "C": 3, "D": 80})
     ws.sheet_properties.tabColor = ORANGE
 
 
@@ -277,8 +285,17 @@ def summary(wb):
 
     head(ws, 5, 1, ["받은 가족", "건수", "합계", "비중", "조화·물품"])
     head(ws, 5, 7, ["지출 분담", "남는 몫", "실제 지급"])
-    ws["G5"].comment = Comment("내가 받은 부의금 × 지출 비율(H3).\n받은 부의금 비율대로 지출을 나눈 금액입니다.", "양식", width=260, height=70)
-    ws["H5"].comment = Comment("내가 받은 부의금 − 지출 분담.", "양식", width=220, height=50)
+    ws["G4"] = "정산 방법 ▶"
+    ws["G4"].font = Font(bold=True, size=11)
+    ws["G4"].alignment = Alignment(horizontal="right")
+    ws.merge_cells("H4:I4")
+    ws["H4"] = PICK
+    ws["H4"].font, ws["H4"].fill, ws["H4"].border = Font(bold=True, size=11), YELLOW, BOX
+    ws["H4"].alignment = Alignment(horizontal="center")
+    list_validation(ws, "H4", '"' + ",".join(METHODS) + '"', strict=True)
+    ws["Q4"] = "=IFERROR(VALUE(LEFT($H$4,1)),0)"  # 고른 방법 번호(숨김). 안 골랐으면 0
+    ws["G5"].comment = Comment("위 노란 칸에서 고른 정산 방법대로 장례 비용(지출 총액)을 나눈 금액.\n'가족 목록'에서 정산 참여가 X 인 가족은 0원.", "양식", width=300, height=80)
+    ws["H5"].comment = Comment("받은 부의금 − 지출 분담. 마이너스면 그만큼 더 내야 한다는 뜻입니다.", "양식", width=260, height=60)
     ws["I5"].comment = Comment("실제로 나눠 드린 금액을 적는 칸입니다.\n만 원 단위로 맞추거나, 똑같이 나누는 등 다르게 정하셨다면 여기에 적으세요.", "양식", width=300, height=80)
     first, last = 6, 5 + N_FAM
     for k in range(N_FAM):
@@ -288,8 +305,11 @@ def summary(wb):
         ws.cell(r, 3).value = f'=IF($A{r}="","",SUMIFS({MONEY}!$C$2:$C${M},{MONEY}!$A$2:$A${M},$A{r},{MONEY}!$G$2:$G${M},">0"))'
         ws.cell(r, 4).value = f'=IF($A{r}="","",IF($B$1=0,0,C{r}/$B$1))'
         ws.cell(r, 5).value = f'=IF($A{r}="","",COUNTIF({ITEM}!$A$2:$A${I},$A{r}))'
-        ws.cell(r, 7).value = f'=IF($A{r}="","",IF($B$1=0,0,C{r}*지출!$H$4/$B$1))'
-        ws.cell(r, 8).value = f'=IF($A{r}="","",C{r}-G{r})'
+        # 숨김 Q: 정산 참여(0/1), R: 가중치(1=사람 수, 2=받은 부의금, 3=손님 수)
+        ws.cell(r, 17).value = f"=IF($A{r}=\"\",0,IF(UPPER(TRIM('가족 목록'!B{2 + k}))=\"X\",0,1))"
+        ws.cell(r, 18).value = f'=IF(OR(Q{r}=0,$Q$4=0),0,CHOOSE($Q$4,1,C{r},B{r}))'
+        ws.cell(r, 7).value = f'=IF(OR($A{r}="",$Q$4=0),"",IF(SUM($R${first}:$R${last})=0,0,지출!$H$4*R{r}/SUM($R${first}:$R${last})))'
+        ws.cell(r, 8).value = f'=IF(G{r}="","",C{r}-G{r})'
         ws.cell(r, 9).fill = INPUT
         for c, f in ((2, '0"건"'), (3, WON), (4, "0.0%"), (5, '0"개"'), (7, WON), (8, WON), (9, WON)):
             ws.cell(r, c).number_format = f
@@ -307,12 +327,15 @@ def summary(wb):
     ws.cell(t + 1, 3).number_format = WON
     ws.cell(t + 1, 3).font = Font(italic=True, color="993333")
     note = [
-        ("지출 분담 계산 방식", Font(bold=True, size=11)),
-        ("· 지출 비율 = 지출 총액 ÷ 부의금 총액", None),
-        ("· 지출 분담 = 받은 부의금 × 지출 비율", None),
-        ("· 남는 몫 = 받은 부의금 − 지출 분담", None),
-        ("· 예) 비율 80%, 받은 부의금 100만 원 → 분담 80만 원, 남는 몫 20만 원", MUTED),
-        ("· 다르게 나눴다면 '실제 지급' 칸에 적으세요.", MUTED),
+        ("정산 방법 (표 위 노란 칸에서 고르세요)", Font(bold=True, size=11)),
+        ("1. 똑같이 나누기: 지출 총액 ÷ 참여 가족 수", None),
+        ("    장점: 가장 단순하고 설명하기 쉽습니다.  단점: 손님이 적게 온 가족도 똑같이 내서 부담이 클 수 있습니다.", MUTED),
+        ("2. 받은 부의금 비율: 지출 총액 × (내 부의금 ÷ 참여 가족 부의금 합)", None),
+        ("    장점: 모두 같은 비율만큼 남아 가장 무난합니다.  단점: 부의금을 많이 받은 가족이 비용도 많이 냅니다.", MUTED),
+        ("3. 손님 수 비율: 지출 총액 × (내 손님 수 ÷ 참여 가족 손님 수 합)", None),
+        ("    장점: 식대처럼 손님 수만큼 드는 비용을 반영합니다.  단점: 봉투 하나에 여럿이 와도 1명으로 세고, 금액 차이는 반영하지 않습니다.", MUTED),
+        ("남는 몫 = 받은 부의금 − 지출 분담. 마이너스면 그만큼 더 내야 한다는 뜻입니다.", MUTED),
+        ("비용을 나눠 내지 않을 가족은 '가족 목록' 탭 '정산 참여'에 X. 다르게 정하셨다면 '실제 지급' 칸에 적으세요.", MUTED),
     ]
     for i, (txt, f) in enumerate(note):
         ws.cell(t + 3 + i, 1, txt).font = f or Font(color="444444")
@@ -334,6 +357,8 @@ def summary(wb):
             ws.cell(r, c).border = BOX
     widths(ws, {"A": 16, "B": 14, "C": 15, "D": 11, "E": 14, "F": 3, "G": 16, "H": 15, "I": 14, "J": 3,
                 "K": 8, "L": 8, "M": 14, "N": 18, "O": 12})
+    for col in ("Q", "R"):
+        ws.column_dimensions[col].hidden = True
     ws.sheet_view.showGridLines = False
     ws.sheet_properties.tabColor = SKY
 

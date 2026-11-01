@@ -9,7 +9,10 @@
 - 이름 칸에 '소계'가 든 줄은 일차 구분선, '합계'·'총계'는 건너뛴다. 소계 값은 '장부에 적은 소계'로 검산한다.
 - 원본 엑셀은 읽기만 한다. 결과는 계산된 값으로 저장한다(입력이 바뀌면 다시 돌린다).
 
-    python3 build_excel.py 장부.xlsx [더.xlsx ...] -o 부의금정산.xlsx
+    python3 build_excel.py 장부.xlsx [더.xlsx ...] -o 부의금정산.xlsx [--split 1|2|3] [--exclude 이름,이름]
+
+--split 은 사용자가 정산 방법을 고른 뒤에만 준다(1 똑같이 나누기, 2 받은 부의금 비율, 3 손님 수 비율).
+고르기 전에는 split_preview.py 로 세 방법 결과를 보여 주고 묻는다.
 """
 import argparse
 import re
@@ -19,6 +22,8 @@ from pathlib import Path
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+
+from split_preview import METHODS, shares
 
 MONEY_KEYS = {
     "giver": ["입금자", "보낸분", "보낸사람", "보내는분", "조문객", "성명", "성함", "이름", "name"],
@@ -212,7 +217,7 @@ def safe_title(name, used):
     return t
 
 
-def write(money, items, spend, ledger, out):
+def write(money, items, spend, ledger, out, method=None, exclude=()):
     wb = Workbook()
     summary = wb.active
     summary.title = "요약"
@@ -302,6 +307,21 @@ def write(money, items, spend, ledger, out):
         s.cell(i, 3).number_format = WON
         s.cell(i, 4).number_format = "0.0%"
         s.cell(i, 5).number_format = '0"개"'
+    # 정산: 사용자가 고른 방법으로만 채운다. '(미지정)' 은 나누지 않는다.
+    if method:
+        fams = [(f, sum(r["amount"] or 0 for r in by_money[f]), len(by_money[f])) for f in order]
+        res = shares(fams, spent, method, set(exclude) | {"(미지정)"})
+        head(s, 5, 7, [f"지출 분담 ({METHODS[method]})", "남는 몫"])
+        for i, fam in enumerate(order, 6):
+            share, left = res[fam]
+            for j, v in ((7, share), (8, left)):
+                c = s.cell(i, j, round(v))
+                c.number_format, c.border = WON, BOX
+        note = f"정산 방법: {method}. {METHODS[method]}"
+        if exclude:
+            note += f" · 나눠 내지 않음: {', '.join(exclude)}"
+        s.cell(7 + len(order), 7, note).font = Font(color="777777")
+
     days = sorted({r["day"] for r in money if r["day"]})
     if days:
         s.cell(4, 11, "일차별 소계").font = Font(bold=True, size=12)
@@ -314,7 +334,7 @@ def write(money, items, spend, ledger, out):
             s.cell(i, 11).number_format = '0"일차"'
             for j in (13, 14, 15):
                 s.cell(i, j).number_format = WON
-    widths(s, {"A": 14, "B": 12, "C": 14, "D": 12, "E": 14, "F": 3, "G": 3, "H": 12, "I": 14,
+    widths(s, {"A": 14, "B": 12, "C": 14, "D": 12, "E": 14, "F": 3, "G": 22, "H": 14, "I": 14,
                "K": 8, "L": 8, "M": 14, "N": 16, "O": 12})
     s.sheet_view.showGridLines = False
 
@@ -389,13 +409,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("inputs", nargs="+")
     ap.add_argument("-o", "--out", default="부의금정산.xlsx")
+    ap.add_argument("--split", type=int, choices=[1, 2, 3], help="사용자가 고른 정산 방법")
+    ap.add_argument("--exclude", default="", help="비용을 나눠 내지 않을 가족, 쉼표로")
     a = ap.parse_args()
     paths = []
     for p in map(lambda x: Path(x).expanduser(), a.inputs):
         paths += sorted(x for x in p.glob("*.xlsx") if not x.name.startswith("~$")) if p.is_dir() else [p]
     money, items, spend, ledger = read_inputs(paths)
     checks(money, items, spend)
-    total, spent = write(money, items, spend, ledger, a.out)
+    exclude = [x.strip() for x in a.exclude.split(",") if x.strip()]
+    total, spent = write(money, items, spend, ledger, a.out, a.split, exclude)
     print(f"부의금 {len(money)}건 {total:,}원 · 조화·물품 {len(items)}개 · 지출 {len(spend)}건 {spent:,}원")
     print(f"확인 필요 {sum(1 for r in money + items + spend if r['check'])}건")
     if ledger:
