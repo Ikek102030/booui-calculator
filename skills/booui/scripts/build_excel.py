@@ -311,31 +311,40 @@ def write(money, items, spend, ledger, out, method=None, exclude=()):
     if method:
         fams = [(f, sum(r["amount"] or 0 for r in by_money[f]), len(by_money[f])) for f in order]
         res = shares(fams, spent, method, set(exclude) | {"(미지정)"})
-        head(s, 5, 7, [f"지출 분담 ({METHODS[method]})", "남는 몫"])
+        head(s, 5, 7, [f"지출 분담 ({METHODS[method]})", "남는 몫", "실제 지급", "절삭된 금액"])
+        sums = [0, 0, 0, 0]
         for i, fam in enumerate(order, 6):
             share, left = res[fam]
-            for j, v in ((7, share), (8, left)):
-                c = s.cell(i, j, round(v))
+            left = round(left)
+            paid = int(left / 10000) * 10000          # 만 원 단위로 내림(0 쪽으로), 천 원 단위 절삭
+            for k, (j, v) in enumerate(((7, round(share)), (8, left), (9, paid), (10, left - paid))):
+                c = s.cell(i, j, v)
                 c.number_format, c.border = WON, BOX
-        note = f"정산 방법: {method}. {METHODS[method]}"
+                sums[k] += v
+        t = 6 + len(order)
+        s.cell(t, 1, "합계").font = Font(bold=True)
+        for k, j in enumerate((7, 8, 9, 10)):
+            c = s.cell(t, j, sums[k])
+            c.number_format, c.border, c.font, c.fill = WON, BOX, Font(bold=True), BLUE
+        note = f"정산 방법: {method}. {METHODS[method]} · 실제 지급은 남는 몫을 만 원 단위로 내린 금액"
         if exclude:
             note += f" · 나눠 내지 않음: {', '.join(exclude)}"
-        s.cell(7 + len(order), 7, note).font = Font(color="777777")
+        s.cell(t + 1, 7, note).font = Font(color="777777")
 
     days = sorted({r["day"] for r in money if r["day"]})
     if days:
-        s.cell(4, 11, "일차별 소계").font = Font(bold=True, size=12)
-        head(s, 5, 11, ["일차", "건수", "합계", "장부에 적은 소계", "차이"])
+        s.cell(4, 12, "일차별 소계").font = Font(bold=True, size=12)
+        head(s, 5, 12, ["일차", "건수", "합계", "장부에 적은 소계", "차이"])
         for i, d in enumerate(days, 6):
             amt = sum(r["amount"] or 0 for r in money if r["day"] == d)
             led = ledger.get(d)
-            for j, v in enumerate([d, sum(1 for r in money if r["day"] == d), amt, led, (amt - led) if led is not None else None], 11):
+            for j, v in enumerate([d, sum(1 for r in money if r["day"] == d), amt, led, (amt - led) if led is not None else None], 12):
                 s.cell(i, j, v).border = BOX
-            s.cell(i, 11).number_format = '0"일차"'
-            for j in (13, 14, 15):
+            s.cell(i, 12).number_format = '0"일차"'
+            for j in (14, 15, 16):
                 s.cell(i, j).number_format = WON
-    widths(s, {"A": 14, "B": 12, "C": 14, "D": 12, "E": 14, "F": 3, "G": 22, "H": 14, "I": 14,
-               "K": 8, "L": 8, "M": 14, "N": 16, "O": 12})
+    widths(s, {"A": 14, "B": 12, "C": 14, "D": 12, "E": 14, "F": 3, "G": 22, "H": 14, "I": 14, "J": 13,
+               "K": 3, "L": 8, "M": 8, "N": 14, "O": 16, "P": 12})
     s.sheet_view.showGridLines = False
 
     # 물품 통계

@@ -88,12 +88,13 @@ def read_settlement(vals):
     settle_cols = []
     if gap:
         c = gap + 1
-        while heads.get(c):
+        # 다음 빈 열 전까지. 붙어 있더라도 일차별 소계 표('일차')부터는 정산 칸이 아니다
+        while heads.get(c) and heads.get(c) != "일차":
             settle_cols.append(c)
             c += 1
     out = {}
     r = head_row + 1
-    while ws.cell(r, 1).value:
+    while ws.cell(r, 1).value and ws.cell(r, 1).value != "합계":
         out[ws.cell(r, 1).value] = {"total": ws.cell(r, total_col).value,
                                     "settle": [(heads[c], ws.cell(r, c).value) for c in settle_cols]}
         r += 1
@@ -133,9 +134,11 @@ def report_html(fam, p, s):
     cards = [f'<div class="card"><div class="l">받은 부의금</div><div class="v">{won(total)}</div><div class="s">{len(money)}건</div></div>',
              f'<div class="card"><div class="l">조화·물품</div><div class="v">{len(items)}개</div></div>']
     if s and s["total"]:
-        settle = [(h, v) for h, v in s["settle"] if isinstance(v, (int, float))]
+        # 절삭된 금액은 가족 전체 몫이라 개인 리포트에는 넣지 않는다. 실제 지급이 있으면 그 카드를 강조
+        settle = [(h, v) for h, v in s["settle"] if isinstance(v, (int, float)) and "절삭" not in h]
+        key = next((i for i, (h, _) in enumerate(settle) if "실제 지급" in h), len(settle) - 1)
         for i, (h, v) in enumerate(settle):
-            hi = " hi" if i == len(settle) - 1 else ""
+            hi = " hi" if i == key else ""
             cards.append(f'<div class="card{hi}"><div class="l">{e(h)}</div><div class="v">{won(v)}</div></div>')
     out = [f"<!doctype html><html lang='ko'><meta charset='utf-8'><style>{CSS}</style><body>",
            '<div class="kicker">부의금 · 조화 정리</div>', f"<h1>{e(fam)} 님</h1>",

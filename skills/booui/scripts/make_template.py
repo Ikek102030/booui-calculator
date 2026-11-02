@@ -284,7 +284,7 @@ def summary(wb):
     ws["H3"].alignment = Alignment(horizontal="right")
 
     head(ws, 5, 1, ["받은 가족", "건수", "합계", "비중", "조화·물품"])
-    head(ws, 5, 7, ["지출 분담", "남는 몫", "실제 지급"])
+    head(ws, 5, 7, ["지출 분담", "남는 몫", "실제 지급", "절삭된 금액"])
     ws["G4"] = "정산 방법 ▶"
     ws["G4"].font = Font(bold=True, size=11)
     ws["G4"].alignment = Alignment(horizontal="right")
@@ -296,7 +296,8 @@ def summary(wb):
     ws["Q4"] = "=IFERROR(VALUE(LEFT($H$4,1)),0)"  # 고른 방법 번호(숨김). 안 골랐으면 0
     ws["G5"].comment = Comment("위 노란 칸에서 고른 정산 방법대로 장례 비용(지출 총액)을 나눈 금액.\n'가족 목록'에서 정산 참여가 X 인 가족은 0원.", "양식", width=300, height=80)
     ws["H5"].comment = Comment("받은 부의금 − 지출 분담. 마이너스면 그만큼 더 내야 한다는 뜻입니다.", "양식", width=260, height=60)
-    ws["I5"].comment = Comment("실제로 나눠 드린 금액을 적는 칸입니다.\n만 원 단위로 맞추거나, 똑같이 나누는 등 다르게 정하셨다면 여기에 적으세요.", "양식", width=300, height=80)
+    ws["I5"].comment = Comment("남는 몫을 만 원 단위로 내린 금액(천 원 단위 절삭).\n실제로 다르게 드렸다면 이 칸에 직접 고쳐 적으세요. 절삭된 금액이 따라서 바뀝니다.", "양식", width=320, height=80)
+    ws["J5"].comment = Comment("남는 몫 − 실제 지급.\n합계는 가족에게 나눠 드리지 않고 남은 돈입니다.", "양식", width=260, height=60)
     first, last = 6, 5 + N_FAM
     for k in range(N_FAM):
         r = first + k
@@ -310,17 +311,20 @@ def summary(wb):
         ws.cell(r, 18).value = f'=IF(OR(Q{r}=0,$Q$4=0),0,CHOOSE($Q$4,1,C{r},B{r}))'
         ws.cell(r, 7).value = f'=IF(OR($A{r}="",$Q$4=0),"",IF(SUM($R${first}:$R${last})=0,0,지출!$H$4*R{r}/SUM($R${first}:$R${last})))'
         ws.cell(r, 8).value = f'=IF(G{r}="","",C{r}-G{r})'
+        # 만 원 단위로 내림(0 쪽으로). 사용자가 덮어써도 절삭 칸은 맞게 돈다
+        ws.cell(r, 9).value = f'=IF(H{r}="","",ROUNDDOWN(H{r},-4))'
+        ws.cell(r, 10).value = f'=IF(OR(H{r}="",I{r}=""),"",H{r}-I{r})'
         ws.cell(r, 9).fill = INPUT
-        for c, f in ((2, '0"건"'), (3, WON), (4, "0.0%"), (5, '0"개"'), (7, WON), (8, WON), (9, WON)):
+        for c, f in ((2, '0"건"'), (3, WON), (4, "0.0%"), (5, '0"개"'), (7, WON), (8, WON), (9, WON), (10, WON)):
             ws.cell(r, c).number_format = f
-        for c in (1, 2, 3, 4, 5, 7, 8, 9):
+        for c in (1, 2, 3, 4, 5, 7, 8, 9, 10):
             ws.cell(r, c).border = BOX
     t = last + 1
     ws.cell(t, 1, "합계")
-    for c, col in ((2, "B"), (3, "C"), (4, "D"), (5, "E"), (7, "G"), (8, "H"), (9, "I")):
+    for c, col in ((2, "B"), (3, "C"), (4, "D"), (5, "E"), (7, "G"), (8, "H"), (9, "I"), (10, "J")):
         ws.cell(t, c).value = f"=SUM({col}{first}:{col}{last})"
         ws.cell(t, c).number_format = ws.cell(first, c).number_format
-    for c in (1, 2, 3, 4, 5, 7, 8, 9):
+    for c in (1, 2, 3, 4, 5, 7, 8, 9, 10):
         ws.cell(t, c).font, ws.cell(t, c).fill, ws.cell(t, c).border = BOLD, BLUE, BOX
     ws.cell(t + 1, 1, "가족 목록에 없는 기록").font = MUTED
     ws.cell(t + 1, 3).value = f"=B1-C{t}"
@@ -335,28 +339,29 @@ def summary(wb):
         ("3. 손님 수 비율: 지출 총액 × (내 손님 수 ÷ 참여 가족 손님 수 합)", None),
         ("    장점: 식대처럼 손님 수만큼 드는 비용을 반영합니다.  단점: 봉투 하나에 여럿이 와도 1명으로 세고, 금액 차이는 반영하지 않습니다.", MUTED),
         ("남는 몫 = 받은 부의금 − 지출 분담. 마이너스면 그만큼 더 내야 한다는 뜻입니다.", MUTED),
-        ("비용을 나눠 내지 않을 가족은 '가족 목록' 탭 '정산 참여'에 X. 다르게 정하셨다면 '실제 지급' 칸에 적으세요.", MUTED),
+        ("실제 지급은 남는 몫을 만 원 단위로 내린 금액, 절삭된 금액은 그 차이입니다. 절삭 합계는 나눠 드리지 않고 남는 돈입니다.", MUTED),
+        ("비용을 나눠 내지 않을 가족은 '가족 목록' 탭 '정산 참여'에 X. 실제로 다르게 드렸다면 '실제 지급' 칸을 직접 고치세요.", MUTED),
     ]
     for i, (txt, f) in enumerate(note):
         ws.cell(t + 3 + i, 1, txt).font = f or Font(color="444444")
 
-    label(ws, "K4", "일차별 소계")
-    ws["K4"].font = Font(bold=True, size=12)
-    ws.merge_cells("K4:O4")  # 좁은 일차 열에서 제목이 잘리지 않게
-    head(ws, 5, 11, ["일차", "건수", "합계", "장부에 적은 소계", "차이"])
+    label(ws, "L4", "일차별 소계")
+    ws["L4"].font = Font(bold=True, size=12)
+    ws.merge_cells("L4:P4")  # 좁은 일차 열에서 제목이 잘리지 않게
+    head(ws, 5, 12, ["일차", "건수", "합계", "장부에 적은 소계", "차이"])
     for d in range(1, N_DAY + 1):
         r = 5 + d
-        ws.cell(r, 11).value = f'=IF({d}<=MAX({MONEY}!$G$2:$G${M}),{d},"")'
-        ws.cell(r, 12).value = f'=IF(K{r}="","",COUNTIF({MONEY}!$G$2:$G${M},K{r}))'
-        ws.cell(r, 13).value = f'=IF(K{r}="","",SUMIF({MONEY}!$G$2:$G${M},K{r},{MONEY}!$C$2:$C${M}))'
-        ws.cell(r, 14).value = (f'=IF(K{r}="","",IF(COUNTIF({MONEY}!$I$2:$I${M},K{r})=0,"",'
-                                f'SUMIF({MONEY}!$I$2:$I${M},K{r},{MONEY}!$C$2:$C${M})))')
-        ws.cell(r, 15).value = f'=IF(OR(K{r}="",N{r}=""),"",M{r}-N{r})'
-        for c, f in ((11, '0"일차"'), (12, '0"건"'), (13, WON), (14, WON), (15, WON)):
+        ws.cell(r, 12).value = f'=IF({d}<=MAX({MONEY}!$G$2:$G${M}),{d},"")'
+        ws.cell(r, 13).value = f'=IF(L{r}="","",COUNTIF({MONEY}!$G$2:$G${M},L{r}))'
+        ws.cell(r, 14).value = f'=IF(L{r}="","",SUMIF({MONEY}!$G$2:$G${M},L{r},{MONEY}!$C$2:$C${M}))'
+        ws.cell(r, 15).value = (f'=IF(L{r}="","",IF(COUNTIF({MONEY}!$I$2:$I${M},L{r})=0,"",'
+                                f'SUMIF({MONEY}!$I$2:$I${M},L{r},{MONEY}!$C$2:$C${M})))')
+        ws.cell(r, 16).value = f'=IF(OR(L{r}="",O{r}=""),"",N{r}-O{r})'
+        for c, f in ((12, '0"일차"'), (13, '0"건"'), (14, WON), (15, WON), (16, WON)):
             ws.cell(r, c).number_format = f
             ws.cell(r, c).border = BOX
-    widths(ws, {"A": 16, "B": 14, "C": 15, "D": 11, "E": 14, "F": 3, "G": 16, "H": 15, "I": 14, "J": 3,
-                "K": 8, "L": 8, "M": 14, "N": 18, "O": 12})
+    widths(ws, {"A": 16, "B": 14, "C": 15, "D": 11, "E": 14, "F": 3, "G": 16, "H": 15, "I": 14, "J": 13, "K": 3,
+                "L": 8, "M": 8, "N": 14, "O": 18, "P": 12})
     for col in ("Q", "R"):
         ws.column_dimensions[col].hidden = True
     ws.sheet_view.showGridLines = False
