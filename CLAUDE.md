@@ -8,6 +8,7 @@
 
 ## 올리기 전 확인
 
+- 사용자가 GitHub 웹에서 README 를 직접 고친다. 작업 전에 `git pull`, 올리기 전에 다시 `git pull --rebase`. 강제 push 금지, 사용자 문장은 되돌리지 않는다.
 - 실제 장부 데이터(가족 이름·금액·시트 주소·이메일·계좌번호)가 저장소에 들어가지 않았는지 대조 검사한다.
 - 양식(`templates/부의금_정산_양식.xlsx`)을 고치면 `scripts/make_template.py` 로 다시 만들고, 가짜 데이터를 넣어 수식 계산기(`pip install formulas`)로 기대값과 대조한다. 설명 글자가 `=` 로 시작하지 않게 한다(엑셀이 수식으로 읽는다).
 - 플러그인 설정을 고치면 `claude plugin validate .` 로 검사한다.
